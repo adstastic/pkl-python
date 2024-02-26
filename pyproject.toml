@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "pkl-python"
+version = "0.1.0"
+description = "Python bindings for Pkl"
+authors = ["Adi Mukherjee <hi@adim.in>"]
+license = "Apache 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.6.2"
+msgpack = "^1.0.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
