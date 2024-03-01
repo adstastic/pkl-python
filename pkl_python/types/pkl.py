@@ -1,15 +1,16 @@
-from typing import Any, Dict, List, Tuple, Union, Set
+from __future__ import annotations
+from typing import Any, Dict, List, Tuple, Union, Set, TypeAlias
 from enum import Enum
 
 # BaseObject is the Python representation of `pkl.base#Object`.
-BaseObject = Dict[str, Any]
+BaseObject: TypeAlias = Dict[str, PklAny]
 
 # Dynamic is the Python representation of `pkl.base#Dynamic`.
 class Dynamic:
     # object properties
-    properties: Dict[str, Any]
-    entries: Dict[Any, Any]
-    elements: List[Any]
+    properties: Dict[str, PklAny]
+    entries: Dict[Any, PklAny]
+    elements: List[PklAny]
 
 class DataSizeUnit(Enum):
     B = "b"
@@ -75,14 +76,14 @@ class Regex:
     pattern: str
 
 # Pair is the Python representation of `pkl.base#Pair`.
-Pair = Tuple[Any, Any]
+Pair: TypeAlias = Tuple[Any, PklAny]
 
-AnyObject = Union[
+AnyObject: TypeAlias = Union[
     BaseObject,
     Dynamic,
-    Dict[Any, Any],
-    List[Any],
-    Set[Any],
+    Dict[Any, PklAny],
+    List[PklAny],
+    Set[PklAny],
     Duration,
     DataSize,
     Pair,
@@ -91,10 +92,10 @@ AnyObject = Union[
     Dict
 ]
 
-Any = Union[
+PklAny: TypeAlias = Union[
     None,
     AnyObject,
-    Dict[Any, Any],
+    Dict[PklAny, PklAny],
     str,
     int,
     bool

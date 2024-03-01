@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, List
+import os
+import pathlib
+from typing import Optional, Dict, List, Union
 from enum import Enum
 import re
-from reader import ResourceReader, ModuleReader
-from project import Project, ProjectDependencies
+from .reader import ResourceReader, ModuleReader
+from ..types.project import  Project, ProjectDependencies, ProjectLocalDependency, ProjectRemoteDependency
 
 class OutputFormat(Enum):
     JSON = "json"
@@ -85,31 +87,6 @@ class EvaluatorOptions:
     # that contains the project's resolved dependencies.
     declared_project_dependencies: Optional[ProjectDependencies] = None
 
-from dataclasses import dataclass
-from typing import Optional, Dict, Union
-import os
-import pathlib
-
-@dataclass
-class Checksums:
-    sha256: str
-
-@dataclass
-class ProjectRemoteDependency:
-    package_uri: str
-    checksums: Checksums
-
-@dataclass
-class ProjectLocalDependency:
-    package_uri: str
-    project_file_uri: str
-    dependencies: ProjectDependencies
-
-@dataclass
-class ProjectDependencies:
-    local_dependencies: Dict[str, ProjectLocalDependency]
-    remote_dependencies: Dict[str, ProjectRemoteDependency]
-
 def encoded_dependencies(input: ProjectDependencies) -> Dict[str, Union[ProjectLocalDependency, ProjectRemoteDependency]]:
     deps = {**input.local_dependencies, **input.remote_dependencies}
     deps_message = {key: {
@@ -121,13 +98,6 @@ def encoded_dependencies(input: ProjectDependencies) -> Dict[str, Union[ProjectL
     } for key, dep in deps.items()}
 
     return deps_message
-
-PreconfiguredOptions = EvaluatorOptions(
-    allowed_resources=["http:", "https:", "file:", "env:", "prop:", "modulepath:", "package:", "projectpackage:"],
-    allowed_modules=["pkl:", "repl:", "file:", "http:", "https:", "modulepath:", "package:", "projectpackage:"],
-    env={k: v for k, v in os.environ.items() if v is not None},
-    cache_dir=str(pathlib.Path.home() / ".pkl/cache"),
-)
 
 def with_project(project: Project) -> EvaluatorOptions:
     return EvaluatorOptions(**with_project_evaluator_settings(project), **with_project_dependencies(project))

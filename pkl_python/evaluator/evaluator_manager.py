@@ -1,52 +1,25 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Callable, Union, List
-from evaluator import EvaluatorImpl, Evaluator
-from types.outgoing import CreateEvaluator, OutgoingMessage, pack_message
+from concurrent.futures import Future
+from typing import Union, List
+
+from .module_source import FileSource
+from .project import load_project_from_evaluator
+from ..types.project import Project
+from ..types.evaluator_manager import EvaluatorManagerInterface
+from .evaluator import EvaluatorImpl, Evaluator
+from ..types.outgoing import CreateEvaluator, OutgoingMessage
 import msgpack
-from types import codes
-from .evaluator_options import encoded_dependencies, EvaluatorOptions, PreconfiguredOptions, with_project
-from project import load_project_from_evaluator, Project
+from ..types import codes
+from .evaluator_options import encoded_dependencies, EvaluatorOptions, with_project
+from .preconfigured_options import PreconfiguredOptions
 from subprocess import Popen, PIPE
-from types.incoming import CreateEvaluatorResponse, decode, IncomingMessage
-from decoder_exec import Decoder
-
-class EvaluatorManagerInterface(ABC):
-    @abstractmethod
-    def close(self) -> None:
-        """
-        Closes the evaluator manager and all of its evaluators.
-
-        If running Pkl as a child process, closes all evaluators as well as the child process.
-        If calling into Pkl through the C API, close all existing evaluators.
-        """
-        pass
-
-    @abstractmethod
-    def get_version(self) -> str:
-        pass
-
-    @abstractmethod
-    def new_evaluator(self, opts: EvaluatorOptions) -> Evaluator:
-        """
-        Constructs an evaluator instance.
-
-        If calling into Pkl as a child process, the first time NewEvaluator is called, this will
-        start the child process.
-        """
-        pass
-
-    @abstractmethod
-    def new_project_evaluator(self, project_dir: str, opts: EvaluatorOptions) -> Evaluator:
-        """
-        An easy way to create an evaluator that is configured by the specified projectDir.
-
-        It is similar to running the `pkl eval` or `pkl test` CLI command with a set `--project-dir`.
-
-        When using project dependencies, they must first be resolved using the `pkl project resolve`
-        CLI command.
-        """
-        pass
-
+from ..types.incoming import decode
+from .decoder_exec import Decoder
+import re
+import os
+import subprocess
+from typing import List, Union, Tuple
+from subprocess import Popen, PIPE
+from asyncio import StreamReader
 
 def new_evaluator_manager() -> EvaluatorManagerInterface:
     """
@@ -65,34 +38,46 @@ def new_evaluator_manager_with_command(pkl_command: List[str]) -> EvaluatorManag
 
     newEvaluatorManagerWithCommand(["/opt/bin/pkl"])
     """
-    return EvaluatorManager(pkl_command)
+    return EvaluatorManagerImpl(pkl_command)
 
-import re
-import os
-import subprocess
-from typing import List, Union, Tuple
-from subprocess import Popen, PIPE
-from asyncio import StreamReader
+semver_pattern = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?")
+pkl_version_regex = re.compile(f"Pkl ({semver_pattern.pattern}).*")
 
-class EvaluatorManager(EvaluatorManagerInterface):
-    semver_pattern = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?")
-    pkl_version_regex = re.compile(f"Pkl ({semver_pattern.pattern}).*")
+class EvaluatorManagerImpl(EvaluatorManagerInterface):
 
-    def __init__(self, pkl_command: List[str]):
+    
+    def __init__(self, pkl_command: list):
         self.pkl_command = pkl_command
         self.pending_evaluators = {}
-        self.evaluators = {}
-        self.closed = False 
-        self.version = None
-        self.encoder = msgpack.Encoder(self.msgpack_config)
-        self.decoder = Decoder(self.msgpack_config)
-        self.stream_decoder = msgpack.Unpacker(use_list=False, )
-
+        self.evaluators = []
+        self.closed = False
         cmd, args = self.get_start_command()
-        self.cmd = Popen([cmd, *args], env=os.environ, stdout=PIPE, stdin=PIPE)
+        self.cmd = subprocess.Popen([cmd] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        try:
+            self.decode(self.cmd.stdout)
+        except Exception as e:
+            print(e)
+        self.cmd.wait()
+        for future in self.pending_evaluators.values():
+            future.set_exception(Exception("pkl command exited"))
+        errors = []
+        for ev in self.evaluators:
+            try:
+                ev.close()
+            except Exception as e:
+                errors.append(e)
+        self.closed = True
+        if errors:
+            print("errors closing evaluators:", errors)
 
-        self.decode(self.cmd.stdout).catch(print)
-        self.cmd.on('close', self.handle_close)
+    def get_start_command(self):
+        if self.pkl_command:
+            return self.pkl_command[0], self.pkl_command[1:]
+        pkl_exec_env = os.environ.get("PKL_EXEC", "")
+        if pkl_exec_env:
+            parts = pkl_exec_env.split(" ")
+            return parts[0], parts[1:]
+        return "pkl", []
 
     def handle_close(self):
         for _, reject in self.pending_evaluators.values():
@@ -116,8 +101,9 @@ class EvaluatorManager(EvaluatorManagerInterface):
             return parts[0], parts[1:]
         return "pkl", []
 
-    async def send(self, out: 'OutgoingMessage'):
-        await self.cmd.stdin.write(pack_message(self.encoder, out))
+    def send(self, out: 'OutgoingMessage'):
+        self.cmd.stdin.write(pack_message(self.encoder, out))
+        self.cmd.stdin.flush()
 
     def get_evaluator(self, evaluator_id: int) -> Union[EvaluatorImpl, None]:
         ev = self.evaluators.get(evaluator_id)
@@ -181,19 +167,32 @@ class EvaluatorManager(EvaluatorManagerInterface):
             **opts.__dict__,
         )
 
+        future = Future()
+        self.pending_evaluators[str(create_evaluator.request_id)] = future
+        try:
+            # Perform the operation...
+            pass
+        except Exception as e:
+            future.set_exception(e)
+        else:
+            # Set the result of the future when the operation is done...
+            pass
+        finally:
+            del self.pending_evaluators[str(create_evaluator.request_id)]
+        return future
+
         if opts.project_dir:
             create_evaluator.project = {
                 'projectFileUri': f"file://{opts.project_dir}/PklProject",
                 'dependencies': encoded_dependencies(opts.declared_project_dependencies) if opts.declared_project_dependencies else None
             }
-
-        response_promise = self.send(create_evaluator)
-
-        response = await response_promise
-        if response.error and response.error != "":
-            raise Exception(response.error)
+        
+        self.send(create_evaluator)
         ev = EvaluatorImpl(response.evaluator_id, self)
         self.evaluators[response.evaluator_id] = ev
+        
+        self.decode(self.cmd.stdout).catch(print)
+        self.cmd.on('close', self.handle_close)
 
         return ev
 
@@ -202,3 +201,8 @@ class EvaluatorManager(EvaluatorManagerInterface):
         project = await load_project_from_evaluator(project_evaluator, f"{project_dir}/PklProject")
 
         return await self.new_evaluator({**with_project(project), **opts.__dict__})
+    
+def pack_message(packer: msgpack.Packer, msg: OutgoingMessage) -> bytearray:
+  code, *rest = msg
+  return packer.pack([code, rest])
+    

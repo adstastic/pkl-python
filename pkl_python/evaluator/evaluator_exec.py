@@ -1,15 +1,18 @@
-from evaluator_options import EvaluatorOptions, PreconfiguredOptions, with_project
-from evaluator import Evaluator
-from project import load_project_from_evaluator
-from evaluator_manager import new_evaluator_manager_with_command
+from pkl_python.evaluator.project import load_project_from_evaluator
+from pkl_python.evaluator.evaluator_options import EvaluatorOptions, with_project
+from pkl_python.evaluator.evaluator import Evaluator
+from pkl_python.evaluator.evaluator_manager import new_evaluator_manager_with_command
+from ..types.project import Project
 from typing import List
+from .module_source import FileSource
+from .preconfigured_options import PreconfiguredOptions
 
 # newEvaluator returns an evaluator backed by a single EvaluatorManager.
 # Its manager gets closed when the evaluator is closed.
 #
 # If creating multiple evaluators, prefer using EvaluatorManager.new_evaluator instead,
 # because it lessens the overhead of each successive evaluator.
-def new_evaluator(opts: EvaluatorOptions) -> Evaluator:
+def new_evaluator(opts: EvaluatorOptions) -> 'Evaluator':
     return new_evaluator_with_command([], opts)
 
 # newProjectEvaluator is an easy way to create an evaluator that is configured by the specified
