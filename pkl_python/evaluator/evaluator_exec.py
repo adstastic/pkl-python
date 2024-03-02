@@ -36,11 +36,11 @@ def new_project_evaluator(project_dir: str, opts: EvaluatorOptions) -> Evaluator
 #
 # If creating multiple evaluators, prefer using EvaluatorManager.new_project_evaluator instead,
 # because it lessens the overhead of each successive evaluator.
-async def new_project_evaluator_with_command(project_dir: str, pkl_cmd: List[str], opts: EvaluatorOptions) -> Evaluator:
+def new_project_evaluator_with_command(project_dir: str, pkl_cmd: List[str], opts: EvaluatorOptions) -> Evaluator:
     manager = new_evaluator_manager_with_command(pkl_cmd)
-    project_evaluator = await new_evaluator(PreconfiguredOptions)
-    project = await load_project_from_evaluator(project_evaluator, f"{project_dir}/PklProject")
-    return await manager.new_evaluator({**with_project(project), **opts})
+    project_evaluator = new_evaluator(PreconfiguredOptions)
+    project = load_project_from_evaluator(project_evaluator, f"{project_dir}/PklProject")
+    return manager.new_evaluator({**with_project(project), **opts})
 
 # newEvaluatorWithCommand is like newEvaluator, but also accepts the Pkl command to run.
 #
