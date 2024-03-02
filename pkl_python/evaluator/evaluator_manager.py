@@ -1,3 +1,4 @@
+import asyncio
 from typing import IO, Union, List
 
 from .project import load_project_from_evaluator
@@ -45,8 +46,7 @@ class EvaluatorManagerImpl(EvaluatorManagerInterface):
         self.encoder = msgpack.Packer()
         self.decoder = msgpack.Unpacker()
         self.closed = False
-        cmd, args = self.get_start_command()
-        self.cmd = subprocess.Popen([cmd] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.cmd = None
 
     def get_start_command(self):
         if self.pkl_command:
@@ -79,9 +79,9 @@ class EvaluatorManagerImpl(EvaluatorManagerInterface):
             return parts[0], parts[1:]
         return "pkl", []
 
-    def send(self, out: 'OutgoingMessage'):
+    async def send(self, out: 'OutgoingMessage'):
         self.cmd.stdin.write(pack_message(self.encoder, out))
-        self.cmd.stdin.flush()
+        await self.cmd.stdin.drain()
 
     def get_evaluator(self, evaluator_id: int) -> Union[EvaluatorImpl, None]:
         ev = self.evaluators.get(evaluator_id)
@@ -89,7 +89,7 @@ class EvaluatorManagerImpl(EvaluatorManagerInterface):
             print("Received unknown evaluator id:", evaluator_id)
         return ev
 
-    def decode(self, stdout: IO[bytes]):
+    async def decode(self, stdout: IO[bytes]):
         self.decoder.feed(stdout)
         for item in self.decoder:
             decoded = decode(item)
@@ -132,12 +132,17 @@ class EvaluatorManagerImpl(EvaluatorManagerInterface):
             raise Exception(f"failed to get version information from Pkl. Ran '{' '.join(args)}', and got stdout \"{result.stdout.decode}\"")
         self.version = version.group(1)
         return self.version
+
         
-    def new_evaluator(self, opts):
+    async def new_evaluator(self, opts):
         if self.closed:
             raise Exception("EvaluatorManager has been closed")
         if not self.cmd:
-            self.cmd = subprocess.Popen(self.pkl_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            self.cmd = await asyncio.create_subprocess_shell(
+                self.get_start_command(),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
         create_evaluator = CreateEvaluator(
             request_id=0,  # TODO
@@ -153,8 +158,7 @@ class EvaluatorManagerImpl(EvaluatorManagerInterface):
                 dependencies= encoded_dependencies(opts.declared_project_dependencies) if opts.declared_project_dependencies else None
             )
         
-        self.cmd.stdin.write(pack_message(self.encoder, create_evaluator))
-        self.cmd.stdin.flush()
+        await self.send(create_evaluator)
 
         while True:
             line = self.cmd.stdout.readline()

@@ -8,9 +8,6 @@ from ..types import codes
 from ..types.evaluator import Evaluator
 from ..types.evaluator_manager import EvaluatorManagerInterface
 
-
-
-
 class EvaluatorImpl(Evaluator):
     def __init__(self, evaluator_id: int, manager: EvaluatorManagerInterface):
         self.evaluator_id = evaluator_id
@@ -67,9 +64,8 @@ class EvaluatorImpl(Evaluator):
     def handle_evaluate_response(self, msg: 'EvaluateResponse'):
         pending = self.pending_requests.get(msg.request_id)
         if not pending:
-            print("warn: received a message for an unknown request id:", msg.request_id)
-            return
-        pending.resolve(msg)
+            raise Exception(f"received a message for an unknown request id: {msg.request_id}")
+        return
 
     def handle_log(self, resp: 'Log'):
         if resp.level == 0:
