@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from ..evaluator.module_source import ModuleSource
 
+
 class Evaluator(ABC):
     # evaluateModule evaluates the given module, and writes it to the value pointed by
     # out.

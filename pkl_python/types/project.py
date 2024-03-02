@@ -2,14 +2,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
+
 @dataclass
 class Checksums:
     sha256: str
+
 
 @dataclass
 class ProjectRemoteDependency:
     package_uri: str
     checksums: Checksums
+
 
 @dataclass
 class ProjectLocalDependency:
@@ -17,10 +20,12 @@ class ProjectLocalDependency:
     project_file_uri: str
     dependencies: ProjectDependencies
 
+
 @dataclass
 class ProjectDependencies:
     local_dependencies: Dict[str, ProjectLocalDependency]
     remote_dependencies: Dict[str, ProjectRemoteDependency]
+
 
 @dataclass
 class ProjectPackage:
@@ -41,6 +46,7 @@ class ProjectPackage:
     exclude: List[str]
     uri: List[str]
 
+
 @dataclass
 class ProjectEvaluatorSettings:
     external_properties: Dict[str, str]
@@ -51,6 +57,7 @@ class ProjectEvaluatorSettings:
     module_cache_dir: str
     root_dir: str
     no_cache: Optional[bool] = None
+
 
 @dataclass
 class Project:

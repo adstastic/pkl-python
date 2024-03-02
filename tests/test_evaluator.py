@@ -4,6 +4,7 @@ import asyncio
 
 from pkl_python.evaluator.module_source import FileSource
 
+
 async def test_evaluator():
     pkl_command = "/Users/adi/.local/bin/pkl"
     options = EvaluatorOptions(output_format=OutputFormat.JSON)
@@ -11,5 +12,6 @@ async def test_evaluator():
     module_path = "tests/test.pkl"
     result = evaluator.evaluate_module(source=FileSource(module_path))
     print(result)
+
 
 asyncio.run(test_evaluator())

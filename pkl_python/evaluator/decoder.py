@@ -37,8 +37,9 @@ Code = Union[
     codeTypeAlias,
     codeObjectMemberProperty,
     codeObjectMemberEntry,
-    codeObjectMemberElement
+    codeObjectMemberElement,
 ]
+
 
 class Decoder:
     def __init__(self):
@@ -55,13 +56,13 @@ class Decoder:
                 return self.decode_dynamic(entries)
             return self.decode_object(name, module_uri, entries)
         elif code in [codeMap, codeMapping]:
-            map, = rest
+            (map,) = rest
             return self.decode_map(map)
         elif code in [codeList, codeListing]:
-            list, = rest
+            (list,) = rest
             return self.decode_list(list)
         elif code == codeSet:
-            list, = rest
+            (list,) = rest
             return set(self.decode_list(list))
         elif code == codeDuration:
             value, unit = rest
@@ -76,14 +77,16 @@ class Decoder:
             start, end, step = rest
             return {"start": start, "end": end, "step": step}
         elif code == codeRegex:
-            pattern, = rest
+            (pattern,) = rest
             return {"pattern": pattern}
         elif code in [codeClass, codeTypeAlias]:
             return {}
         else:
             raise ValueError(f"encountered unknown object code: {code}")
 
-    def decode_object(self, name: str, module_uri: str, rest: List[Code]) -> Dict[str, Any]:
+    def decode_object(
+        self, name: str, module_uri: str, rest: List[Code]
+    ) -> Dict[str, Any]:
         out = {}
         for entry in rest:
             code, *rest = entry
@@ -129,6 +132,8 @@ class Decoder:
             code, *rest = value
             return self.decode_code(code, rest)
         if isinstance(value, dict):
-            raise ValueError(f"unexpected object {value} provided to decodeAny; expected primitive type or list")
+            raise ValueError(
+                f"unexpected object {value} provided to decodeAny; expected primitive type or list"
+            )
         # primitives
         return value

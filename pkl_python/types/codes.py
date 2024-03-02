@@ -11,10 +11,10 @@ EvaluateRead = 0x26
 EvaluateReadResponse = 0x27
 EvaluateReadModule = 0x28
 EvaluateReadModuleResponse = 0x29
-ListResourcesRequest = 0x2a
-ListResourcesResponse = 0x2b
-ListModulesRequest = 0x2c
-ListModulesResponse = 0x2d
+ListResourcesRequest = 0x2A
+ListResourcesResponse = 0x2B
+ListModulesRequest = 0x2C
+ListModulesResponse = 0x2D
 
 # Type alias for OutgoingCode
 OutgoingCode = Union[
@@ -24,5 +24,5 @@ OutgoingCode = Union[
     EvaluateReadResponse,
     EvaluateReadModuleResponse,
     ListResourcesResponse,
-    ListModulesResponse
+    ListModulesResponse,
 ]

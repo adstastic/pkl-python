@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 import os
 
+
 # ModuleSource represents a source for Pkl evaluation.
 class ModuleSource:
     # uri is the URL of the resource.
@@ -11,6 +12,7 @@ class ModuleSource:
     def __init__(self, uri, contents=None):
         self.uri = uri
         self.contents = contents
+
 
 # FileSource builds a ModuleSource, treating its arguments as paths on the file system.
 #
@@ -23,11 +25,14 @@ def FileSource(*pathElems):
     src = os.path.abspath(src)
     return ModuleSource(f"file://{src}")
 
+
 replTextUri = "repl:text"
+
 
 # TextSource builds a ModuleSource whose contents are the provided text.
 def TextSource(text):
     return ModuleSource(replTextUri, text)
+
 
 # UriSource builds a ModuleSource using the input uri.
 def UriSource(uri):

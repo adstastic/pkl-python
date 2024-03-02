@@ -5,12 +5,14 @@ from enum import Enum
 # BaseObject is the Python representation of `pkl.base#Object`.
 BaseObject: TypeAlias = Dict[str, PklAny]
 
+
 # Dynamic is the Python representation of `pkl.base#Dynamic`.
 class Dynamic:
     # object properties
     properties: Dict[str, PklAny]
     entries: Dict[Any, PklAny]
     elements: List[PklAny]
+
 
 class DataSizeUnit(Enum):
     B = "b"
@@ -25,6 +27,7 @@ class DataSizeUnit(Enum):
     PB = "pb"
     PIB = "pib"
 
+
 # DataSize is the Python representation of `pkl.base#DataSize`.
 #
 # It represents a quantity of binary data, represented by value (e.g. 30.5) and unit
@@ -36,6 +39,7 @@ class DataSize:
     # unit is the unit of this data size.
     unit: DataSizeUnit
 
+
 class DurationUnit(Enum):
     NS = "ns"
     US = "us"
@@ -44,6 +48,7 @@ class DurationUnit(Enum):
     MIN = "min"
     HOUR = "hour"
     D = "d"
+
 
 # Duration is the Python representation of `pkl.base#Duration`.
 #
@@ -55,6 +60,7 @@ class Duration:
 
     # unit is the unit of this duration.
     unit: DurationUnit
+
 
 # IntSeq is the Python representation of `pkl.base#IntSeq`.
 #
@@ -70,10 +76,12 @@ class IntSeq:
     # step is the common difference of successive members of this sequence.
     step: int
 
+
 # Regex is the Python representation of `pkl.base#Regex`.
 class Regex:
     # pattern is the regex pattern expression in string form.
     pattern: str
+
 
 # Pair is the Python representation of `pkl.base#Pair`.
 Pair: TypeAlias = Tuple[Any, PklAny]
@@ -89,14 +97,7 @@ AnyObject: TypeAlias = Union[
     Pair,
     IntSeq,
     Regex,
-    Dict
+    Dict,
 ]
 
-PklAny: TypeAlias = Union[
-    None,
-    AnyObject,
-    Dict[PklAny, PklAny],
-    str,
-    int,
-    bool
-]
+PklAny: TypeAlias = Union[None, AnyObject, Dict[PklAny, PklAny], str, int, bool]

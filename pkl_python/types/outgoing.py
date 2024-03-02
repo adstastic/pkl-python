@@ -1,17 +1,18 @@
-from typing import Dict, List, Union, Optional
 from .codes import OutgoingCode
 from pydantic import BaseModel as PydanticBaseModel
 from typing import Dict, List, Union, Optional
-from .codes import OutgoingCode
-from pydantic import BaseModel as PydanticBaseModel
+
+
 class BaseModel(PydanticBaseModel):
     class Config:
-        arbitrary_types_allowed = True 
+        arbitrary_types_allowed = True
+
 
 class ResourceReader(BaseModel):
     scheme: str
     has_hierarchical_uris: bool
     is_globbable: bool
+
 
 class ModuleReader(BaseModel):
     scheme: str
@@ -19,15 +20,18 @@ class ModuleReader(BaseModel):
     is_globbable: bool
     is_local: bool
 
+
 class Checksums(BaseModel):
     checksums: str
+
 
 class ProjectOrDependency(BaseModel):
     package_uri: Optional[str] = None
     type: Optional[str] = None
     project_file_uri: Optional[str] = None
     checksums: Optional[Checksums] = None
-    dependencies: Optional[Dict[str, 'ProjectOrDependency']] = None
+    dependencies: Optional[Dict[str, "ProjectOrDependency"]] = None
+
 
 class CreateEvaluator(BaseModel):
     request_id: int
@@ -44,6 +48,7 @@ class CreateEvaluator(BaseModel):
     project: Optional[ProjectOrDependency] = None
     code: OutgoingCode
 
+
 class Evaluate(BaseModel):
     request_id: int
     evaluator_id: int
@@ -52,11 +57,13 @@ class Evaluate(BaseModel):
     module_text: Optional[str] = None
     code: OutgoingCode
 
+
 class ReadResource(BaseModel):
     request_id: int
     evaluator_id: int
     uri: str
     code: OutgoingCode
+
 
 class ReadModule(BaseModel):
     request_id: int
@@ -64,11 +71,13 @@ class ReadModule(BaseModel):
     uri: str
     code: OutgoingCode
 
+
 class ListResources(BaseModel):
     request_id: int
     evaluator_id: int
     uri: str
     code: OutgoingCode
+
 
 class ListModules(BaseModel):
     request_id: int
@@ -76,10 +85,12 @@ class ListModules(BaseModel):
     uri: str
     code: OutgoingCode
 
+
 class CloseEvaluator(BaseModel):
     request_id: int
     evaluator_id: int
     code: OutgoingCode
+
 
 OutgoingMessage = Union[
     CreateEvaluator,
@@ -88,5 +99,5 @@ OutgoingMessage = Union[
     ReadModule,
     ListResources,
     ListModules,
-    CloseEvaluator
+    CloseEvaluator,
 ]

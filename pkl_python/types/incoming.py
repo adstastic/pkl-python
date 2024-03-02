@@ -1,15 +1,17 @@
-from typing import Any, Dict, List, Tuple, Union
-from .codes import *
-from pydantic import BaseModel, FileUrl, Base64Bytes
+from typing import Dict, Tuple, Union
+from pydantic import BaseModel, FileUrl
 from . import codes
+
 
 class IncomingMessage(BaseModel):
     pass
+
 
 class CreateEvaluatorResponse(IncomingMessage):
     evaluatorId: int
     requestId: int
     error: int
+
 
 class EvaluateResponse(IncomingMessage):
     evaluatorId: int
@@ -17,15 +19,18 @@ class EvaluateResponse(IncomingMessage):
     result: str
     error: int
 
+
 class ReadResource(IncomingMessage):
     evaluatorId: int
     requestId: int
     uri: FileUrl
 
+
 class ReadModule(IncomingMessage):
     evaluatorId: int
     requestId: int
     uri: FileUrl
+
 
 class Log(IncomingMessage):
     evaluatorId: int
@@ -33,15 +38,18 @@ class Log(IncomingMessage):
     message: str
     frameUri: str
 
+
 class ListResources(IncomingMessage):
     evaluatorId: int
     requestId: int
     uri: FileUrl
 
+
 class ListModules(IncomingMessage):
     evaluatorId: int
     requestId: int
     uri: FileUrl
+
 
 IncomingMessage = Union[
     CreateEvaluatorResponse,
@@ -50,10 +58,11 @@ IncomingMessage = Union[
     ReadModule,
     Log,
     ListResources,
-    ListModules
+    ListModules,
 ]
 
-def decode(incoming: Tuple[int, Dict]) -> 'IncomingMessage':
+
+def decode(incoming: Tuple[int, Dict]) -> "IncomingMessage":
     code, map = incoming
     value = None
     if code == codes.EvaluateResponse:

@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+
 class PathElement:
     """
     PathElement is an element within a base URI.
     For example, a PathElement with name "bar.txt" and is not a directory at base URI "file:///foo/"
     implies URI resource `file:///foo/bar.txt`.
     """
+
     def __init__(self, name: str, is_directory: bool):
         # name is the name of the path element.
         self.name = name
@@ -14,10 +16,12 @@ class PathElement:
         # isDirectory tells if the path element is a directory.
         self.is_directory = is_directory
 
+
 class Reader(ABC):
     """
     Reader is the base implementation shared by a ResourceReader and a ModuleReader.
     """
+
     def __init__(self, scheme: str, is_globbable: bool, has_hierarchical_uris: bool):
         # scheme returns the scheme part of the URL that this reader can read.
         self.scheme = scheme
@@ -48,6 +52,7 @@ class Reader(ABC):
     def list_elements(self, url: str) -> List[PathElement]:
         pass
 
+
 class ResourceReader(Reader):
     """
     ResourceReader is a custom resource reader for Pkl.
@@ -63,10 +68,12 @@ class ResourceReader(Reader):
     To provide a custom reader, register it on EvaluatorOptions.ResourceReaders when building
     an Evaluator.
     """
+
     @abstractmethod
     # read reads the byte contents of this resource.
     def read(self, url: str) -> bytes:
         pass
+
 
 class ModuleReader(Reader):
     """
@@ -85,9 +92,16 @@ class ModuleReader(Reader):
     To provide a custom reader, register it on EvaluatorOptions.ModuleReaders when building
     an Evaluator.
     """
-    def __init__(self, scheme: str, is_globbable: bool, has_hierarchical_uris: bool, is_local: bool):
+
+    def __init__(
+        self,
+        scheme: str,
+        is_globbable: bool,
+        has_hierarchical_uris: bool,
+        is_local: bool,
+    ):
         super().__init__(scheme, is_globbable, has_hierarchical_uris)
-                # isLocal tells if the resources represented by this reader is considered local to the runtime.
+        # isLocal tells if the resources represented by this reader is considered local to the runtime.
         # A local module reader enables resolving triple-dot imports.
         self.is_local = is_local
 

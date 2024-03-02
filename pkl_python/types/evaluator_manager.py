@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from ..types.evaluator import Evaluator
 from ..evaluator.evaluator_options import EvaluatorOptions
 
+
 class EvaluatorManagerInterface(ABC):
     @abstractmethod
     def close(self) -> None:
@@ -28,7 +29,9 @@ class EvaluatorManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def new_project_evaluator(self, project_dir: str, opts: EvaluatorOptions) -> Evaluator:
+    def new_project_evaluator(
+        self, project_dir: str, opts: EvaluatorOptions
+    ) -> Evaluator:
         """
         An easy way to create an evaluator that is configured by the specified projectDir.
 

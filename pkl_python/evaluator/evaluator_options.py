@@ -1,11 +1,15 @@
 from dataclasses import dataclass
-import os
-import pathlib
 from typing import Optional, Dict, List, Union
 from enum import Enum
 import re
 from .reader import ResourceReader, ModuleReader
-from ..types.project import  Project, ProjectDependencies, ProjectLocalDependency, ProjectRemoteDependency
+from ..types.project import (
+    Project,
+    ProjectDependencies,
+    ProjectLocalDependency,
+    ProjectRemoteDependency,
+)
+
 
 class OutputFormat(Enum):
     JSON = "json"
@@ -17,11 +21,13 @@ class OutputFormat(Enum):
     XML = "xml"
     YAML = "yaml"
 
+
 @dataclass
 class EvaluatorOptions:
     """
     EvaluatorOptions is the set of options available to control Pkl evaluation.
     """
+
     # properties is the set of properties available to the `prop:` resource reader.
     properties: Optional[Dict[str, str]] = None
 
@@ -45,10 +51,10 @@ class EvaluatorOptions:
     allowed_resources: Optional[List[str]] = None
 
     # resourceReaders are the resource readers to be used by the evaluator.
-    resource_readers: Optional[List['ResourceReader']] = None
+    resource_readers: Optional[List["ResourceReader"]] = None
 
     # moduleReaders are the set of custom module readers to be used by the evaluator.
-    module_readers: Optional[List['ModuleReader']] = None
+    module_readers: Optional[List["ModuleReader"]] = None
 
     # cacheDir is the directory where `package:` modules are cached.
     #
@@ -87,36 +93,57 @@ class EvaluatorOptions:
     # that contains the project's resolved dependencies.
     declared_project_dependencies: Optional[ProjectDependencies] = None
 
-def encoded_dependencies(input: ProjectDependencies) -> Dict[str, Union[ProjectLocalDependency, ProjectRemoteDependency]]:
+
+def encoded_dependencies(
+    input: ProjectDependencies,
+) -> Dict[str, Union[ProjectLocalDependency, ProjectRemoteDependency]]:
     deps = {**input.local_dependencies, **input.remote_dependencies}
-    deps_message = {key: {
-        'packageUri': dep.package_uri,
-        'projectFileUri': dep.project_file_uri if isinstance(dep, ProjectLocalDependency) else None,
-        'type': 'local' if isinstance(dep, ProjectLocalDependency) else 'remote',
-        'checksums': None if isinstance(dep, ProjectLocalDependency) else {'checksums': dep.checksums.sha256},
-        'dependencies': encoded_dependencies(dep.dependencies) if isinstance(dep, ProjectLocalDependency) else None,
-    } for key, dep in deps.items()}
+    deps_message = {
+        key: {
+            "packageUri": dep.package_uri,
+            "projectFileUri": dep.project_file_uri
+            if isinstance(dep, ProjectLocalDependency)
+            else None,
+            "type": "local" if isinstance(dep, ProjectLocalDependency) else "remote",
+            "checksums": None
+            if isinstance(dep, ProjectLocalDependency)
+            else {"checksums": dep.checksums.sha256},
+            "dependencies": encoded_dependencies(dep.dependencies)
+            if isinstance(dep, ProjectLocalDependency)
+            else None,
+        }
+        for key, dep in deps.items()
+    }
 
     return deps_message
 
-def with_project(project: Project) -> EvaluatorOptions:
-    return EvaluatorOptions(**with_project_evaluator_settings(project), **with_project_dependencies(project))
 
-def with_project_evaluator_settings(project: Project) -> Dict[str, Union[str, Dict[str, str], List[str]]]:
+def with_project(project: Project) -> EvaluatorOptions:
+    return EvaluatorOptions(
+        **with_project_evaluator_settings(project), **with_project_dependencies(project)
+    )
+
+
+def with_project_evaluator_settings(
+    project: Project,
+) -> Dict[str, Union[str, Dict[str, str], List[str]]]:
     if project.evaluator_settings:
         return {
-            'properties': project.evaluator_settings.external_properties,
-            'env': project.evaluator_settings.env,
-            'allowed_modules': project.evaluator_settings.allowed_modules,
-            'allowed_resources': project.evaluator_settings.allowed_resources,
-            'cache_dir': None if project.evaluator_settings.no_cache else project.evaluator_settings.module_cache_dir,
-            'root_dir': project.evaluator_settings.root_dir,
+            "properties": project.evaluator_settings.external_properties,
+            "env": project.evaluator_settings.env,
+            "allowed_modules": project.evaluator_settings.allowed_modules,
+            "allowed_resources": project.evaluator_settings.allowed_resources,
+            "cache_dir": None
+            if project.evaluator_settings.no_cache
+            else project.evaluator_settings.module_cache_dir,
+            "root_dir": project.evaluator_settings.root_dir,
         }
     else:
         return {}
 
+
 def with_project_dependencies(project: Project) -> EvaluatorOptions:
     return EvaluatorOptions(
-        project_dir=re.sub(r'^file://|/PklProject$', '', project.project_file_uri),
-        declared_project_dependencies=project.dependencies
+        project_dir=re.sub(r"^file://|/PklProject$", "", project.project_file_uri),
+        declared_project_dependencies=project.dependencies,
     )
