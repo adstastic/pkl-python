@@ -85,7 +85,7 @@ class Decoder:
             raise ValueError(f"encountered unknown object code: {code}")
 
     def decode_object(
-        self, name: str, module_uri: str, rest: List[Code]
+        self, name: str, rest: List[Code]
     ) -> Dict[str, Any]:
         out = {}
         for entry in rest:
@@ -133,7 +133,7 @@ class Decoder:
             return self.decode_code(code, rest)
         if isinstance(value, dict):
             raise ValueError(
-                f"unexpected object {value} provided to decodeAny; expected primitive type or list"
+                f"unexpected object {value} provided to decode_any; expected primitive type or list"
             )
         # primitives
         return value
